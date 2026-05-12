@@ -21,7 +21,6 @@ app.innerHTML = `
     <section class="card" aria-label="Study session">
       <h2>Session</h2>
       <p><strong>Started:</strong> <span data-field="startedAt"></span></p>
-      <p><strong>Condition:</strong> <span data-field="condition"></span></p>
     </section>
   </main>
 `
@@ -31,7 +30,6 @@ const textFields = {
   studyId: session.participant.studyId,
   sessionId: session.participant.sessionId,
   startedAt: new Date(session.startedAt).toLocaleString(),
-  condition: session.condition,
 }
 
 Object.entries(textFields).forEach(([field, value]) => {
