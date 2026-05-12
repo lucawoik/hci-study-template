@@ -47,9 +47,3 @@ http://localhost:5173/?PROLIFIC_PID=test-user&STUDY_ID=study-123&SESSION_ID=sess
 npm run build
 npm run preview
 ```
-
-## VS Code notes
-
-- Open this folder directly in VS Code.
-- Use the integrated terminal for `npm run dev`.
-- Duplicate this template by copying the folder or using "Use this template" in GitHub.
