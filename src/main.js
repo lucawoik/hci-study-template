@@ -37,7 +37,7 @@ const screens = {
     `,
     onRender() {
       const nextButton = app.querySelector('[data-action="goToTask"]')
-      nextButton?.addEventListener('click', () => setScreen('task'))
+      nextButton?.addEventListener('click', () => renderScreen('task'))
     },
   },
   task: {
@@ -65,14 +65,13 @@ function populateTextFields() {
 
 function renderScreen(name) {
   const screen = screens[name]
-  if (!screen) return
+  if (!screen) {
+    console.warn(`Unknown screen: "${name}"`)
+    return
+  }
   app.innerHTML = screen.template
   populateTextFields()
   screen.onRender?.()
 }
 
-function setScreen(name) {
-  renderScreen(name)
-}
-
-setScreen('start')
+renderScreen('start')
