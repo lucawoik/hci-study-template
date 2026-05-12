@@ -66,7 +66,9 @@ function populateTextFields() {
 function renderScreen(name) {
   const screen = screens[name]
   if (!screen) {
-    console.warn(`Unknown screen: "${name}"`)
+    console.warn(
+      `Unknown screen: "${name}". Available screens: ${Object.keys(screens).join(', ')}`,
+    )
     return
   }
   app.innerHTML = screen.template
