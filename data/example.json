@@ -1,9 +1,0 @@
-{
-  "study": "simple-hci-prototype",
-  "tasks": [
-    {
-      "id": 1,
-      "prompt": "Click the button that feels most visible to you."
-    }
-  ]
-}
