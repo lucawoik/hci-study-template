@@ -9,8 +9,6 @@ export function createStudySession(prolificParams) {
   }
 }
 
-const DEFAULT_RESIZE_SETTLE_MS = 400
-
 export function getViewportDimensions() {
   const viewport = window.visualViewport
   return {
@@ -36,35 +34,66 @@ export async function enterFullscreen(target = document.documentElement) {
   return true
 }
 
+export function waitForViewportSettle({ stableFrameTarget = 2, maxFrames = 30 } = {}) {
+  return new Promise((resolve) => {
+    let lastViewport = getViewportDimensions()
+    let stableFrames = 0
+    let frameCount = 0
+
+    const checkViewport = () => {
+      const nextViewport = getViewportDimensions()
+      if (
+        nextViewport.width === lastViewport.width &&
+        nextViewport.height === lastViewport.height
+      ) {
+        stableFrames += 1
+      } else {
+        stableFrames = 0
+        lastViewport = nextViewport
+      }
+
+      frameCount += 1
+      if (stableFrames >= stableFrameTarget || frameCount >= maxFrames) {
+        resolve(lastViewport)
+        return
+      }
+
+      requestAnimationFrame(checkViewport)
+    }
+
+    requestAnimationFrame(checkViewport)
+  })
+}
+
 export function watchViewportAndFullscreen({
-  resizeSettleMs = DEFAULT_RESIZE_SETTLE_MS,
   onViewportSettled,
   onFullscreenExit,
   emitInitial = true,
 } = {}) {
-  let timerId = null
+  let disposed = false
+  let settleRequestId = 0
 
-  const emitViewport = () => {
+  const settleAndEmitViewport = async () => {
+    const requestId = ++settleRequestId
+    const viewport = await waitForViewportSettle()
+    if (disposed || requestId !== settleRequestId) {
+      return
+    }
     onViewportSettled?.({
-      viewport: getViewportDimensions(),
+      viewport,
       fullscreen: isFullscreenActive(),
     })
   }
 
-  const scheduleViewportEmit = () => {
-    window.clearTimeout(timerId)
-    timerId = window.setTimeout(emitViewport, resizeSettleMs)
-  }
-
   const handleResize = () => {
-    scheduleViewportEmit()
+    void settleAndEmitViewport()
   }
 
   const handleFullscreenChange = () => {
     if (!isFullscreenActive()) {
       onFullscreenExit?.()
     }
-    scheduleViewportEmit()
+    void settleAndEmitViewport()
   }
 
   window.addEventListener('resize', handleResize)
@@ -72,11 +101,11 @@ export function watchViewportAndFullscreen({
   window.visualViewport?.addEventListener('resize', handleResize)
 
   if (emitInitial) {
-    emitViewport()
+    void settleAndEmitViewport()
   }
 
   return () => {
-    window.clearTimeout(timerId)
+    disposed = true
     window.removeEventListener('resize', handleResize)
     document.removeEventListener('fullscreenchange', handleFullscreenChange)
     window.visualViewport?.removeEventListener('resize', handleResize)

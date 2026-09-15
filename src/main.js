@@ -42,7 +42,15 @@ const screens = {
     `,
     onRender() {
       const nextButton = app.querySelector('[data-action="goToTask"]')
-      const handleNext = () => renderScreen('task')
+      const handleNext = async () => {
+        renderScreen('task')
+        const taskContainer = app.querySelector('main')
+        try {
+          await enterFullscreen(taskContainer ?? app)
+        } catch (error) {
+          console.warn('Fullscreen request failed.', error)
+        }
+      }
       nextButton?.addEventListener('click', handleNext)
 
       return () => {
@@ -63,15 +71,12 @@ const screens = {
           <h2>Fullscreen</h2>
           <p><strong>Status:</strong> <span data-field="fullscreenStatus">Not fullscreen</span></p>
           <p><strong>Viewport:</strong> <span data-field="viewportSize">Unknown</span></p>
-          <button class="button-primary" data-action="enterFullscreen">Enter fullscreen</button>
         </section>
       </main>
     `,
     onRender() {
       const viewportStatus = app.querySelector('[data-field="viewportSize"]')
       const fullscreenStatus = app.querySelector('[data-field="fullscreenStatus"]')
-      const fullscreenButton = app.querySelector('[data-action="enterFullscreen"]')
-      const taskContainer = app.querySelector('main')
 
       const setFullscreenStatus = () => {
         if (fullscreenStatus) {
@@ -91,21 +96,10 @@ const screens = {
         },
       })
 
-      const handleFullscreenClick = async () => {
-        try {
-          await enterFullscreen(taskContainer ?? document.documentElement)
-          setFullscreenStatus()
-        } catch (error) {
-          console.warn('Fullscreen request failed.', error)
-        }
-      }
-
-      fullscreenButton?.addEventListener('click', handleFullscreenClick)
       setFullscreenStatus()
 
       return () => {
         stopWatching()
-        fullscreenButton?.removeEventListener('click', handleFullscreenClick)
       }
     },
   },
