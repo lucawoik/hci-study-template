@@ -63,6 +63,17 @@ function populateTextFields() {
   })
 }
 
+function getRequestedScreen() {
+  const params = new URLSearchParams(window.location.search)
+  const requestedScreen = params.get('screen')
+
+  if (requestedScreen && requestedScreen in screens) {
+    return requestedScreen
+  }
+
+  return null
+}
+
 function renderScreen(name) {
   const screen = screens[name]
   if (!screen) {
@@ -76,4 +87,5 @@ function renderScreen(name) {
   screen.onRender?.()
 }
 
-renderScreen('start')
+const devScreen = getRequestedScreen()
+renderScreen(devScreen || 'start')
