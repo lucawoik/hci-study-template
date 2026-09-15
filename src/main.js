@@ -1,5 +1,10 @@
 import './styles.css'
-import { createStudySession } from './study.js'
+import {
+  createStudySession,
+  enterFullscreen,
+  isFullscreenActive,
+  watchViewportAndFullscreen,
+} from './study.js'
 import { readProlificParams } from './prolific.js'
 
 const app = document.querySelector('#app')
@@ -37,7 +42,12 @@ const screens = {
     `,
     onRender() {
       const nextButton = app.querySelector('[data-action="goToTask"]')
-      nextButton?.addEventListener('click', () => renderScreen('task'))
+      const handleNext = () => renderScreen('task')
+      nextButton?.addEventListener('click', handleNext)
+
+      return () => {
+        nextButton?.removeEventListener('click', handleNext)
+      }
     },
   },
   task: {
@@ -49,8 +59,55 @@ const screens = {
           <h2>Task</h2>
           <p>This is where your task UI goes.</p>
         </section>
+        <section class="card" aria-label="Fullscreen controls">
+          <h2>Fullscreen</h2>
+          <p><strong>Status:</strong> <span data-field="fullscreenStatus">Not fullscreen</span></p>
+          <p><strong>Viewport:</strong> <span data-field="viewportSize">Unknown</span></p>
+          <button class="button-primary" data-action="enterFullscreen">Enter fullscreen</button>
+        </section>
       </main>
     `,
+    onRender() {
+      const viewportStatus = app.querySelector('[data-field="viewportSize"]')
+      const fullscreenStatus = app.querySelector('[data-field="fullscreenStatus"]')
+      const fullscreenButton = app.querySelector('[data-action="enterFullscreen"]')
+      const taskContainer = app.querySelector('main')
+
+      const setFullscreenStatus = () => {
+        if (fullscreenStatus) {
+          fullscreenStatus.textContent = isFullscreenActive() ? 'Fullscreen' : 'Not fullscreen'
+        }
+      }
+
+      const stopWatching = watchViewportAndFullscreen({
+        onViewportSettled({ viewport }) {
+          if (viewportStatus) {
+            viewportStatus.textContent = `${viewport.width} × ${viewport.height}`
+          }
+          setFullscreenStatus()
+        },
+        onFullscreenExit() {
+          setFullscreenStatus()
+        },
+      })
+
+      const handleFullscreenClick = async () => {
+        try {
+          await enterFullscreen(taskContainer ?? document.documentElement)
+          setFullscreenStatus()
+        } catch (error) {
+          console.warn('Fullscreen request failed.', error)
+        }
+      }
+
+      fullscreenButton?.addEventListener('click', handleFullscreenClick)
+      setFullscreenStatus()
+
+      return () => {
+        stopWatching()
+        fullscreenButton?.removeEventListener('click', handleFullscreenClick)
+      }
+    },
   },
 }
 
@@ -75,6 +132,8 @@ function getRequestedScreen() {
 }
 
 function renderScreen(name) {
+  activeScreenCleanup?.()
+
   const screen = screens[name]
   if (!screen) {
     console.warn(
@@ -84,8 +143,9 @@ function renderScreen(name) {
   }
   app.innerHTML = screen.template
   populateTextFields()
-  screen.onRender?.()
+  activeScreenCleanup = screen.onRender?.() ?? null
 }
 
+let activeScreenCleanup = null
 const devScreen = getRequestedScreen()
 renderScreen(devScreen || 'start')
