@@ -12,6 +12,18 @@ body {
   margin: 0;
 }
 
+body.fullscreen-active {
+  background: #000000;
+}
+
+body.fullscreen-active .container {
+  color: #f9fafb;
+}
+
+body.fullscreen-active .muted {
+  color: #d1d5db;
+}
+
 .container {
   max-width: 760px;
   margin: 0 auto;

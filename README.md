@@ -52,6 +52,8 @@ http://localhost:5173/?PROLIFIC_PID=test-user&STUDY_ID=study-123&SESSION_ID=sess
 
 In the default task flow, fullscreen is requested immediately when the participant starts the task. Viewport callbacks use frame-based settle detection so dimensions are reported only after resizing has stopped (useful for slower fullscreen transitions, such as macOS).
 
+If fullscreen is exited during the task, a dedicated resume screen is shown. Participants can resume by clicking the button, which restarts fullscreen and returns to the task. While fullscreen is active, the page background is switched to black.
+
 ## Build for deployment
 
 ```bash

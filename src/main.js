@@ -18,6 +18,16 @@ const textFields = {
   startedAt: new Date(session.startedAt).toLocaleString(),
 }
 
+async function startTaskWithFullscreen() {
+  renderScreen('task')
+  const taskContainer = app.querySelector('main')
+  try {
+    await enterFullscreen(taskContainer ?? app)
+  } catch (error) {
+    console.warn('Fullscreen request failed.', error)
+  }
+}
+
 const screens = {
   start: {
     template: `
@@ -42,19 +52,29 @@ const screens = {
     `,
     onRender() {
       const nextButton = app.querySelector('[data-action="goToTask"]')
-      const handleNext = async () => {
-        renderScreen('task')
-        const taskContainer = app.querySelector('main')
-        try {
-          await enterFullscreen(taskContainer ?? app)
-        } catch (error) {
-          console.warn('Fullscreen request failed.', error)
-        }
-      }
+      const handleNext = async () => startTaskWithFullscreen()
       nextButton?.addEventListener('click', handleNext)
 
       return () => {
         nextButton?.removeEventListener('click', handleNext)
+      }
+    },
+  },
+  resume: {
+    template: `
+      <main class="container">
+        <h1>Resume task</h1>
+        <p class="muted">Fullscreen was exited. Resume to continue the study task.</p>
+        <button class="button-primary" data-action="resumeTask">Resume fullscreen task</button>
+      </main>
+    `,
+    onRender() {
+      const resumeButton = app.querySelector('[data-action="resumeTask"]')
+      const handleResume = async () => startTaskWithFullscreen()
+      resumeButton?.addEventListener('click', handleResume)
+
+      return () => {
+        resumeButton?.removeEventListener('click', handleResume)
       }
     },
   },
@@ -79,26 +99,26 @@ const screens = {
       const fullscreenStatus = app.querySelector('[data-field="fullscreenStatus"]')
 
       const setFullscreenStatus = () => {
-        if (fullscreenStatus) {
-          fullscreenStatus.textContent = isFullscreenActive() ? 'Fullscreen' : 'Not fullscreen'
-        }
+        const fullscreenActive = isFullscreenActive()
+        document.body.classList.toggle('fullscreen-active', fullscreenActive)
+        fullscreenStatus.textContent = fullscreenActive ? 'Fullscreen' : 'Not fullscreen'
       }
 
       const stopWatching = watchViewportAndFullscreen({
         onViewportSettled({ viewport }) {
-          if (viewportStatus) {
-            viewportStatus.textContent = `${viewport.width} × ${viewport.height}`
-          }
+          viewportStatus.textContent = `${viewport.width} × ${viewport.height}`
           setFullscreenStatus()
         },
         onFullscreenExit() {
           setFullscreenStatus()
+          renderScreen('resume')
         },
       })
 
       setFullscreenStatus()
 
       return () => {
+        document.body.classList.remove('fullscreen-active')
         stopWatching()
       }
     },
