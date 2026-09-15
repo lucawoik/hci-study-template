@@ -99,9 +99,7 @@ const screens = {
       const fullscreenStatus = app.querySelector('[data-field="fullscreenStatus"]')
 
       const setFullscreenStatus = () => {
-        const fullscreenActive = isFullscreenActive()
-        document.body.classList.toggle('fullscreen-active', fullscreenActive)
-        fullscreenStatus.textContent = fullscreenActive ? 'Fullscreen' : 'Not fullscreen'
+        fullscreenStatus.textContent = isFullscreenActive() ? 'Fullscreen' : 'Not fullscreen'
       }
 
       const stopWatching = watchViewportAndFullscreen({
@@ -118,7 +116,6 @@ const screens = {
       setFullscreenStatus()
 
       return () => {
-        document.body.classList.remove('fullscreen-active')
         stopWatching()
       }
     },

@@ -12,16 +12,8 @@ body {
   margin: 0;
 }
 
-body.fullscreen-active {
-  background: #000000;
-}
-
-body.fullscreen-active .container {
-  color: #f9fafb;
-}
-
-body.fullscreen-active .muted {
-  color: #d1d5db;
+#app:fullscreen::backdrop {
+  background: #f7f8fa;
 }
 
 .container {
