@@ -12,7 +12,7 @@ body {
   margin: 0;
 }
 
-#app:fullscreen::backdrop {
+.container:fullscreen::backdrop {
   background: #f7f8fa;
 }
 
