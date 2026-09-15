@@ -1,5 +1,10 @@
 import './styles.css'
-import { createStudySession } from './study.js'
+import {
+  createStudySession,
+  enterFullscreen,
+  isFullscreenActive,
+  watchViewportAndFullscreen,
+} from './study.js'
 import { readProlificParams } from './prolific.js'
 
 const app = document.querySelector('#app')
@@ -11,6 +16,16 @@ const textFields = {
   studyId: session.participant.studyId,
   sessionId: session.participant.sessionId,
   startedAt: new Date(session.startedAt).toLocaleString(),
+}
+
+async function startTaskWithFullscreen() {
+  renderScreen('task')
+  const taskContainer = app.querySelector('main')
+  try {
+    await enterFullscreen(taskContainer ?? app)
+  } catch (error) {
+    console.warn('Fullscreen request failed.', error)
+  }
 }
 
 const screens = {
@@ -37,7 +52,30 @@ const screens = {
     `,
     onRender() {
       const nextButton = app.querySelector('[data-action="goToTask"]')
-      nextButton?.addEventListener('click', () => renderScreen('task'))
+      const handleNext = async () => startTaskWithFullscreen()
+      nextButton?.addEventListener('click', handleNext)
+
+      return () => {
+        nextButton?.removeEventListener('click', handleNext)
+      }
+    },
+  },
+  resume: {
+    template: `
+      <main class="container">
+        <h1>Resume task</h1>
+        <p class="muted">Fullscreen was exited. Resume to continue the study task.</p>
+        <button class="button-primary" data-action="resumeTask">Resume fullscreen task</button>
+      </main>
+    `,
+    onRender() {
+      const resumeButton = app.querySelector('[data-action="resumeTask"]')
+      const handleResume = async () => startTaskWithFullscreen()
+      resumeButton?.addEventListener('click', handleResume)
+
+      return () => {
+        resumeButton?.removeEventListener('click', handleResume)
+      }
     },
   },
   task: {
@@ -49,8 +87,38 @@ const screens = {
           <h2>Task</h2>
           <p>This is where your task UI goes.</p>
         </section>
+        <section class="card" aria-label="Fullscreen controls">
+          <h2>Fullscreen</h2>
+          <p><strong>Status:</strong> <span data-field="fullscreenStatus">Not fullscreen</span></p>
+          <p><strong>Viewport:</strong> <span data-field="viewportSize">Unknown</span></p>
+        </section>
       </main>
     `,
+    onRender() {
+      const viewportStatus = app.querySelector('[data-field="viewportSize"]')
+      const fullscreenStatus = app.querySelector('[data-field="fullscreenStatus"]')
+
+      const setFullscreenStatus = () => {
+        fullscreenStatus.textContent = isFullscreenActive() ? 'Fullscreen' : 'Not fullscreen'
+      }
+
+      const stopWatching = watchViewportAndFullscreen({
+        onViewportSettled({ viewport }) {
+          viewportStatus.textContent = `${viewport.width} × ${viewport.height}`
+          setFullscreenStatus()
+        },
+        onFullscreenExit() {
+          setFullscreenStatus()
+          renderScreen('resume')
+        },
+      })
+
+      setFullscreenStatus()
+
+      return () => {
+        stopWatching()
+      }
+    },
   },
 }
 
@@ -75,6 +143,8 @@ function getRequestedScreen() {
 }
 
 function renderScreen(name) {
+  activeScreenCleanup?.()
+
   const screen = screens[name]
   if (!screen) {
     console.warn(
@@ -84,8 +154,9 @@ function renderScreen(name) {
   }
   app.innerHTML = screen.template
   populateTextFields()
-  screen.onRender?.()
+  activeScreenCleanup = screen.onRender?.() ?? null
 }
 
+let activeScreenCleanup = null
 const devScreen = getRequestedScreen()
 renderScreen(devScreen || 'start')

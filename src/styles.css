@@ -12,6 +12,10 @@ body {
   margin: 0;
 }
 
+.container:fullscreen::backdrop {
+  background: #f7f8fa;
+}
+
 .container {
   max-width: 760px;
   margin: 0 auto;
